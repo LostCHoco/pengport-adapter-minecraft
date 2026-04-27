@@ -26,8 +26,17 @@ pub enum ContainerEvent {
 }
 
 /// 기본 Docker 연결. Unix socket (Linux) / named pipe (Windows).
+///
+/// `connect_with_local_defaults()` 는 default timeout 을 적용하는데, 그게 logs API
+/// 같은 long-running stream 에 30초 정도로 발동해 데이터 idle 시 stream close 를 유발.
+/// → timeout=0 (무제한) 명시. logs follow 는 평생 살아 있어야 의미.
 pub fn connect_local() -> Result<Docker> {
-    Docker::connect_with_local_defaults().context("Docker Engine 에 연결 실패")
+    Docker::connect_with_socket(
+        "/var/run/docker.sock",
+        0,
+        bollard::API_DEFAULT_VERSION,
+    )
+    .context("Docker Engine 에 연결 실패")
 }
 
 pub async fn tail_container(
