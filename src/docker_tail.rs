@@ -3,7 +3,7 @@
 //! 단일 MC 컨테이너만 추적 (multi-instance 는 별도 어댑터 프로세스).
 //! 연결이 끊기면 지수 백오프로 재연결 시도.
 
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use anyhow::{Context, Result};
 use bollard::{query_parameters::LogsOptions, Docker};
@@ -11,6 +11,13 @@ use futures_util::StreamExt;
 use tokio::sync::mpsc;
 
 use crate::parser::{parse_line, PlayerEvent};
+
+fn now_unix_secs() -> i32 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i32)
+        .unwrap_or(0)
+}
 
 #[derive(Debug, Clone)]
 pub enum ContainerEvent {
@@ -28,11 +35,14 @@ pub async fn tail_container(
     container_name: String,
     out: mpsc::Sender<ContainerEvent>,
 ) -> Result<()> {
+    // tail="0" + follow=true 시 일부 docker engine 빌드에서 stream 이 즉시 close 되는
+    // 현상을 회피. since 를 현재 시각으로 설정하면 docker API 가 "현재 이후 새 로그만"
+    // 으로 해석 → tail 미지정 (default = "all") 도 안전하게 새 로그만 follow.
     let options = Some(LogsOptions {
         follow: true,
         stdout: true,
         stderr: true,
-        tail: "0".to_string(),
+        since: now_unix_secs(),
         timestamps: false,
         ..Default::default()
     });
