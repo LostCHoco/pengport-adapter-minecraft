@@ -1,0 +1,8 @@
+# 별도 repo 로 분리 시 사용. 본가 워크스페이스에 있을 때는 root .gitignore 가 우선.
+target/
+Cargo.lock
+.env
+.env.local
+*.log
+.idea/
+.vscode/
