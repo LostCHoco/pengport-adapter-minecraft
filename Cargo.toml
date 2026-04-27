@@ -1,0 +1,33 @@
+[package]
+name = "pengport-adapter-minecraft"
+version = "0.1.0"
+edition = "2021"
+authors = ["pengport"]
+license = "AGPL-3.0-only"
+repository = "https://github.com/LostCHoco/pengport-adapter-minecraft"
+description = "PengPort PSP 어댑터 — Minecraft 서버 (Docker logs + RCON) → PSP service endpoints (manifest/status/events)"
+
+[[bin]]
+name = "adapter-minecraft"
+path = "src/main.rs"
+
+[dependencies]
+# PSP v1 schema lib — PengPort 본가에서 git dep
+pengport-shared = { git = "https://github.com/LostCHoco/PengPort.git", rev = "fd8b45c8e1455de0666b0b95006a15d1f278c274" }
+
+tokio = { version = "1", features = ["full"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+futures-util = "0.3"
+axum = "0.8"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "cors"] }
+bollard = "0.19"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rcon = { version = "0.6", features = ["rt-tokio"] }
+subtle = "2"
