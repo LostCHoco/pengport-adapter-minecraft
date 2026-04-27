@@ -95,20 +95,26 @@ pub async fn tail_with_reconnect(
     container_name: String,
     out: mpsc::Sender<ContainerEvent>,
 ) {
-    let mut backoff = Duration::from_secs(1);
-    let max_backoff = Duration::from_secs(60);
+    // Docker engine 의 idle close 가 정상 시나리오 — 빠른 1초 reconnect 로 join/leave latency 최소화.
+    // 진짜 에러 (Docker 연결 실패, 컨테이너 없음 등) 일 때만 지수 백오프.
+    const QUICK_RECONNECT: Duration = Duration::from_secs(1);
+    const ERROR_BACKOFF_INITIAL: Duration = Duration::from_secs(1);
+    const ERROR_BACKOFF_MAX: Duration = Duration::from_secs(60);
+
+    let mut error_backoff = ERROR_BACKOFF_INITIAL;
 
     loop {
         match tail_container(docker.clone(), container_name.clone(), out.clone()).await {
             Ok(_) => {
-                tracing::info!("정상 종료 → 재연결 대기 {:?}", backoff);
+                // idle close — 빠른 reconnect. backoff reset.
+                error_backoff = ERROR_BACKOFF_INITIAL;
+                tokio::time::sleep(QUICK_RECONNECT).await;
             }
             Err(e) => {
-                tracing::warn!(error=%e, "tail 실패 → 재연결 대기 {:?}", backoff);
+                tracing::warn!(error=%e, "tail 실패 → 재연결 대기 {:?}", error_backoff);
+                tokio::time::sleep(error_backoff).await;
+                error_backoff = (error_backoff * 2).min(ERROR_BACKOFF_MAX);
             }
         }
-
-        tokio::time::sleep(backoff).await;
-        backoff = (backoff * 2).min(max_backoff);
     }
 }
