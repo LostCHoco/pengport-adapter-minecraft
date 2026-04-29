@@ -56,14 +56,12 @@ async fn main() -> Result<()> {
     );
 
     let state = AppState::new(256);
-    let docker = docker_tail::connect_local()?;
 
     // 1. 컨테이너 이벤트 채널.
     let (evt_tx, mut evt_rx) = mpsc::channel::<ContainerEvent>(1024);
 
-    // 2. Docker tail.
+    // 2. Docker tail (CLI subprocess).
     tokio::spawn(docker_tail::tail_with_reconnect(
-        docker.clone(),
         cfg.container.clone(),
         evt_tx.clone(),
     ));
