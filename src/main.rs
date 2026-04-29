@@ -87,9 +87,7 @@ async fn main() -> Result<()> {
     tokio::spawn(async move {
         while let Some(ev) = evt_rx.recv().await {
             match ev {
-                ContainerEvent::Player(PlayerEvent::Join(p)) => {
-                    state_for_disp.apply_join(&p).await
-                }
+                ContainerEvent::Player(PlayerEvent::Join(p)) => state_for_disp.apply_join(&p).await,
                 ContainerEvent::Player(PlayerEvent::Leave(p)) => {
                     state_for_disp.apply_leave(&p).await
                 }
@@ -103,8 +101,8 @@ async fn main() -> Result<()> {
 
     // 5. PSP manifest (어댑터 부팅 시 1회 빌드, 자체 base_url 결정).
     //    base_url 결정: PSP_PUBLIC_BASE_URL 환경변수 (publish 도메인) 우선, 없으면 BIND.
-    let base_url = std::env::var("PSP_PUBLIC_BASE_URL")
-        .unwrap_or_else(|_| format!("http://{}", cfg.bind));
+    let base_url =
+        std::env::var("PSP_PUBLIC_BASE_URL").unwrap_or_else(|_| format!("http://{}", cfg.bind));
     let manifest = manifest::build_manifest(&cfg, &base_url);
 
     let ctx = AppCtx {
@@ -114,7 +112,10 @@ async fn main() -> Result<()> {
     };
 
     let app = Router::new()
-        .route("/.well-known/pengport-service", get(routes::manifest_handler))
+        .route(
+            "/.well-known/pengport-service",
+            get(routes::manifest_handler),
+        )
         .route("/pengport/status", get(routes::status_handler))
         .route("/pengport/events", get(routes::events_handler))
         .with_state(ctx);

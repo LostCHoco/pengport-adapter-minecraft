@@ -126,8 +126,7 @@ impl AppState {
             }
             let was_offline = !s.online;
             s.online = true;
-            let joined: Vec<String> =
-                authoritative.difference(&s.players).cloned().collect();
+            let joined: Vec<String> = authoritative.difference(&s.players).cloned().collect();
             let left: Vec<String> = s.players.difference(&authoritative).cloned().collect();
             s.players = authoritative;
             (was_offline, joined, left)

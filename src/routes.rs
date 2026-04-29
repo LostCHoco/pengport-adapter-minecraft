@@ -67,9 +67,8 @@ pub async fn events_handler(
 
     let rx = ctx.state.bus.subscribe();
     let initial_status = ctx.state.current_status().await;
-    let initial = stream::once(async move {
-        event_to_sse(&ServiceEvent::StatusChanged(initial_status))
-    });
+    let initial =
+        stream::once(async move { event_to_sse(&ServiceEvent::StatusChanged(initial_status)) });
 
     let bcast = BroadcastStream::new(rx).filter_map(|res| async move {
         match res {

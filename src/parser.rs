@@ -19,12 +19,10 @@ pub enum PlayerEvent {
 
 /// 한 줄에서 이벤트를 추출. 매치 없으면 `None`.
 pub fn parse_line(line: &str) -> Option<PlayerEvent> {
-    static JOIN_RE: LazyLock<Regex> = LazyLock::new(|| {
-        Regex::new(r"\b([A-Za-z0-9_]{1,16})\s+joined the game\b").unwrap()
-    });
-    static LEAVE_RE: LazyLock<Regex> = LazyLock::new(|| {
-        Regex::new(r"\b([A-Za-z0-9_]{1,16})\s+left the game\b").unwrap()
-    });
+    static JOIN_RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"\b([A-Za-z0-9_]{1,16})\s+joined the game\b").unwrap());
+    static LEAVE_RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"\b([A-Za-z0-9_]{1,16})\s+left the game\b").unwrap());
 
     if let Some(caps) = JOIN_RE.captures(line) {
         return Some(PlayerEvent::Join(caps[1].to_string()));
@@ -41,14 +39,19 @@ mod tests {
 
     #[test]
     fn parses_fabric_join() {
-        let line = "[20:41:22] [Server thread/INFO] [minecraft/DedicatedServer]: pengport joined the game";
+        let line =
+            "[20:41:22] [Server thread/INFO] [minecraft/DedicatedServer]: pengport joined the game";
         assert_eq!(parse_line(line), Some(PlayerEvent::Join("pengport".into())));
     }
 
     #[test]
     fn parses_fabric_leave() {
-        let line = "[20:42:55] [Server thread/INFO] [minecraft/DedicatedServer]: pengport left the game";
-        assert_eq!(parse_line(line), Some(PlayerEvent::Leave("pengport".into())));
+        let line =
+            "[20:42:55] [Server thread/INFO] [minecraft/DedicatedServer]: pengport left the game";
+        assert_eq!(
+            parse_line(line),
+            Some(PlayerEvent::Leave("pengport".into()))
+        );
     }
 
     #[test]
