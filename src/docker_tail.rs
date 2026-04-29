@@ -42,9 +42,11 @@ pub async fn tail_container(
     container_name: String,
     out: mpsc::Sender<ContainerEvent>,
 ) -> Result<()> {
-    let since = now_unix_secs().to_string();
+    // `--since=값` 합친 형식 — `--since` `값` 분리 형식은 일부 환경에서 stream 즉시
+    // 종료 (exit=0) 하는 docker CLI quirk 가 있음. 합친 형식이 안정.
+    let since_arg = format!("--since={}", now_unix_secs());
     let mut child = Command::new("docker")
-        .args(["logs", "-f", "--since", &since, &container_name])
+        .args(["logs", "-f", &since_arg, &container_name])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
