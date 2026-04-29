@@ -18,6 +18,7 @@ use anyhow::{Context, Result};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::sync::mpsc;
+use tokio::task;
 
 use crate::parser::{parse_line, PlayerEvent};
 
@@ -44,8 +45,9 @@ pub async fn tail_container(
     let since = now_unix_secs().to_string();
     let mut child = Command::new("docker")
         .args(["logs", "-f", "--since", &since, &container_name])
+        .stdin(Stdio::null())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
+        .stderr(Stdio::piped())
         .kill_on_drop(true)
         .spawn()
         .context("docker logs spawn 실패 (docker CLI 가 PATH 에 있어야 함)")?;
@@ -54,8 +56,20 @@ pub async fn tail_container(
         .stdout
         .take()
         .context("docker logs subprocess stdout pipe 미존재")?;
-    let mut lines = BufReader::new(stdout).lines();
+    let stderr = child
+        .stderr
+        .take()
+        .context("docker logs subprocess stderr pipe 미존재")?;
 
+    // stderr 는 background 로 읽어 warn 로깅 — docker engine 의 에러 메시지 진단용
+    task::spawn(async move {
+        let mut reader = BufReader::new(stderr).lines();
+        while let Ok(Some(line)) = reader.next_line().await {
+            tracing::warn!(stderr_line = %line, "docker logs stderr");
+        }
+    });
+
+    let mut lines = BufReader::new(stdout).lines();
     while let Some(line) = lines
         .next_line()
         .await
@@ -64,14 +78,13 @@ pub async fn tail_container(
         if let Some(event) = parse_line(&line) {
             tracing::debug!(?event, "플레이어 이벤트");
             if out.send(ContainerEvent::Player(event)).await.is_err() {
-                // 수신자 closed — 정리
                 break;
             }
         }
     }
 
-    let _ = child.wait().await;
-    tracing::info!("로그 스트림 종료");
+    let status = child.wait().await.context("docker logs wait 실패")?;
+    tracing::info!(exit = ?status.code(), "로그 스트림 종료");
     let _ = out.send(ContainerEvent::StreamEnded).await;
     Ok(())
 }
