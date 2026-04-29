@@ -25,7 +25,10 @@ pub fn build_manifest(cfg: &AppConfig, base_url: &str) -> ServiceManifest {
     if let Some(v) = cfg.mc_java_major {
         prism_config.insert("java_major".into(), json!(v));
     }
-    let display = cfg.mc_display_name.clone().unwrap_or_else(|| cfg.mc_name.clone());
+    let display = cfg
+        .mc_display_name
+        .clone()
+        .unwrap_or_else(|| cfg.mc_name.clone());
     prism_config.insert("display_name".into(), json!(display));
 
     let mut play_args = serde_json::Map::new();
@@ -72,7 +75,10 @@ pub fn build_manifest(cfg: &AppConfig, base_url: &str) -> ServiceManifest {
         category_hint: Some(CategoryHint::Game),
         endpoints: ManifestEndpoints {
             status: format!("{}/pengport/status", base_url.trim_end_matches('/')),
-            events: Some(format!("{}/pengport/events", base_url.trim_end_matches('/'))),
+            events: Some(format!(
+                "{}/pengport/events",
+                base_url.trim_end_matches('/')
+            )),
         },
         actions,
         permissions,
