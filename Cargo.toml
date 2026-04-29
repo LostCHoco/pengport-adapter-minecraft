@@ -30,3 +30,6 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rcon = { version = "0.6", features = ["rt-tokio"] }
 subtle = "2"
+# Filesystem watch — minecraft 의 latest.log 를 inotify (Linux) 로 직접 follow.
+# docker engine 의 logs follow stream 이 ~30s idle 시 종료되는 quirk 회피용.
+notify = "6"
