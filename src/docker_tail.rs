@@ -42,9 +42,14 @@ pub async fn tail_container(
     container_name: String,
     out: mpsc::Sender<ContainerEvent>,
 ) -> Result<()> {
+    // since 를 35초 전으로 — docker engine 이 ~30초 idle 시 stream 종료하는 known quirk
+    // 가 있어 reconnect 시 그 사이 갭의 logs (player join/leave 등) 를 못 받는 문제 회피.
+    // 35초 history + follow 모드. parser 가 이미 본 line 은 dedup 안 하지만 player event
+    // apply 자체는 idempotent (state 의 join/leave 동일 player 처리는 안전).
+    //
     // `--since=값` 합친 형식 — `--since` `값` 분리 형식은 일부 환경에서 stream 즉시
-    // 종료 (exit=0) 하는 docker CLI quirk 가 있음. 합친 형식이 안정.
-    let since_arg = format!("--since={}", now_unix_secs());
+    // 종료하는 docker CLI quirk 가 있음. 합친 형식이 안정.
+    let since_arg = format!("--since={}", now_unix_secs().saturating_sub(35));
     let mut child = Command::new("docker")
         .args(["logs", "-f", &since_arg, &container_name])
         .stdin(Stdio::null())

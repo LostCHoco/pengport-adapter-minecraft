@@ -66,13 +66,15 @@ async fn main() -> Result<()> {
         evt_tx.clone(),
     ));
 
-    // 3. RCON sync (drift 보정).
+    // 3. RCON sync (drift 보정 + docker tail 의 30s idle close 갭 fallback).
+    //    healthy 3s polling — server 부담 작음 (RCON list 가 가벼운 호출).
+    //    unhealthy (server down) 시 60s 로 backoff.
     tokio::spawn(rcon::rcon_sync_loop(
         state.clone(),
         cfg.rcon_address.clone(),
         cfg.rcon_password.expose().to_string(),
-        Duration::from_secs(30),
-        Duration::from_secs(120),
+        Duration::from_secs(3),
+        Duration::from_secs(60),
     ));
     drop(evt_tx);
 
