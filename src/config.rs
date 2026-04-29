@@ -5,7 +5,8 @@
 //! ## 필수
 //! - `MC_ID`              — service id (catalog 와 일치). 예: `modded-mc`
 //! - `MC_NAME`            — manifest 의 사용자 표시 이름. 예: `알파펭`
-//! - `MC_CONTAINER`       — Docker 컨테이너 이름 (logs tail 대상)
+//! - `MC_LOG_DIR`         — minecraft 의 logs 디렉토리 (host bind mount → adapter ro).
+//!                           예: `/mc-logs` (latest.log 가 이 경로 안에 있어야 함)
 //! - `RCON_ADDRESS`       — `host:port` (컨테이너 네트워크 내)
 //! - `RCON_PASSWORD`      — RCON 비밀번호
 //! - `MC_HOST`            — 클라이언트가 접속할 도메인/IP (public)
@@ -24,6 +25,7 @@
 //! - `EVENTS_TOKEN`       — events SSE 인증 토큰. 비어있으면 인증 없음
 
 use std::env;
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 
@@ -63,8 +65,8 @@ pub struct AppConfig {
     pub mc_description: Option<String>,
     pub mc_icon_url: Option<String>,
 
-    // Docker / RCON
-    pub container: String,
+    // log file tail + RCON
+    pub log_dir: PathBuf,
     pub rcon_address: String,
     pub rcon_password: SecretString,
 
@@ -89,7 +91,9 @@ impl AppConfig {
         let mc_description = env::var("MC_DESCRIPTION").ok();
         let mc_icon_url = env::var("MC_ICON_URL").ok();
 
-        let container = env::var("MC_CONTAINER").context("MC_CONTAINER 누락")?;
+        let log_dir: PathBuf = env::var("MC_LOG_DIR")
+            .context("MC_LOG_DIR 누락 — minecraft 의 logs 디렉토리를 ro mount 한 경로")?
+            .into();
         let rcon_address = env::var("RCON_ADDRESS").context("RCON_ADDRESS 누락")?;
         let rcon_password = env::var("RCON_PASSWORD")
             .context("RCON_PASSWORD 누락")
@@ -117,7 +121,7 @@ impl AppConfig {
             mc_name,
             mc_description,
             mc_icon_url,
-            container,
+            log_dir,
             rcon_address,
             rcon_password,
             mc_host,

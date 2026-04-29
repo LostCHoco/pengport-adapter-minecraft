@@ -3,10 +3,11 @@
 //! 단일 Minecraft 컨테이너를 PSP service 로 외부 노출.
 //!
 //! ```text
-//! [Minecraft 컨테이너]
-//!     │ Docker logs (-f) + RCON list
-//!     ▼
-//! [adapter-minecraft]  ← 이 바이너리
+//! [Minecraft 컨테이너] ── /data 를 host bind mount
+//!     │                       │
+//!     │ RCON list (drift 보정)  │ logs/latest.log (host filesystem)
+//!     ▼                       ▼
+//! [adapter-minecraft] ── inotify watch (sub-second push)
 //!     │ /.well-known/pengport-service  (manifest)
 //!     │ /pengport/status                (StatusResponse)
 //!     │ /pengport/events                (SSE: ServiceEvent)
@@ -15,7 +16,7 @@
 //! ```
 
 mod config;
-mod docker_tail;
+mod log_tail;
 mod manifest;
 mod parser;
 mod rcon;
@@ -31,7 +32,7 @@ use tokio::sync::mpsc;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 use crate::config::AppConfig;
-use crate::docker_tail::ContainerEvent;
+use crate::log_tail::ContainerEvent;
 use crate::parser::PlayerEvent;
 use crate::routes::AppCtx;
 use crate::state::AppState;
@@ -50,7 +51,7 @@ async fn main() -> Result<()> {
     let cfg = AppConfig::from_env()?;
     tracing::info!(
         mc_id = %cfg.mc_id,
-        container = %cfg.container,
+        log_dir = %cfg.log_dir.display(),
         bind = %cfg.bind,
         "adapter-minecraft 시작"
     );
@@ -60,20 +61,23 @@ async fn main() -> Result<()> {
     // 1. 컨테이너 이벤트 채널.
     let (evt_tx, mut evt_rx) = mpsc::channel::<ContainerEvent>(1024);
 
-    // 2. Docker tail (CLI subprocess).
-    tokio::spawn(docker_tail::tail_with_reconnect(
-        cfg.container.clone(),
-        evt_tx.clone(),
-    ));
+    // 2. 로그 file watch (inotify). minecraft 의 latest.log 를 host bind mount 로 받아
+    //    직접 follow — docker engine 의 ~30s idle close quirk 우회. sub-second push.
+    let log_dir = cfg.log_dir.clone();
+    let evt_tx_clone = evt_tx.clone();
+    tokio::spawn(async move {
+        if let Err(e) = log_tail::watch_logs(log_dir, evt_tx_clone).await {
+            tracing::error!(error = %e, "log_tail watch 시작 실패");
+        }
+    });
 
-    // 3. RCON sync (drift 보정 + docker tail 의 30s idle close 갭 fallback).
-    //    healthy 3s polling — server 부담 작음 (RCON list 가 가벼운 호출).
-    //    unhealthy (server down) 시 60s 로 backoff.
+    // 3. RCON sync (drift 보정 — adapter 재시작/회전 갭 / log line 누락 등).
+    //    file tail 이 정확하므로 polling 주기는 30s 로 충분. unhealthy 시 60s.
     tokio::spawn(rcon::rcon_sync_loop(
         state.clone(),
         cfg.rcon_address.clone(),
         cfg.rcon_password.expose().to_string(),
-        Duration::from_secs(3),
+        Duration::from_secs(30),
         Duration::from_secs(60),
     ));
     drop(evt_tx);
@@ -90,7 +94,8 @@ async fn main() -> Result<()> {
                     state_for_disp.apply_leave(&p).await
                 }
                 ContainerEvent::StreamEnded => {
-                    tracing::info!("docker tail 스트림 종료");
+                    // file watch 모델에서는 거의 발생 안 함 (호환용).
+                    tracing::info!("log_tail stream 종료");
                 }
             }
         }
