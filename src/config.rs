@@ -5,8 +5,8 @@
 //! ## 필수
 //! - `MC_ID`              — service id (catalog 와 일치). 예: `modded-mc`
 //! - `MC_NAME`            — manifest 의 사용자 표시 이름. 예: `알파펭`
-//! - `MC_LOG_DIR`         — minecraft 의 logs 디렉토리 (host bind mount → adapter ro).
-//!                           예: `/mc-logs` (latest.log 가 이 경로 안에 있어야 함)
+//! - `MC_LOG_DIR`         — minecraft logs 디렉토리 (host bind mount → adapter ro).
+//!   예: `/mc-logs` (latest.log 가 이 경로 안에 있어야 함)
 //! - `RCON_ADDRESS`       — `host:port` (컨테이너 네트워크 내)
 //! - `RCON_PASSWORD`      — RCON 비밀번호
 //! - `MC_HOST`            — 클라이언트가 접속할 도메인/IP (public)

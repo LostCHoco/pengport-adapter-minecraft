@@ -107,7 +107,7 @@ impl TailState {
             };
             let line_bytes: Vec<u8> = self.buf.drain(..=nl).collect();
             let line_str = String::from_utf8_lossy(&line_bytes);
-            let line = line_str.trim_end_matches(|c: char| c == '\n' || c == '\r');
+            let line = line_str.trim_end_matches(['\n', '\r']);
             if let Some(event) = parse_line(line) {
                 tracing::debug!(?event, "플레이어 이벤트");
                 if out.send(ContainerEvent::Player(event)).await.is_err() {
