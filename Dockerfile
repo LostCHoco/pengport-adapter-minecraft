@@ -8,9 +8,10 @@ WORKDIR /build
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
 COPY Cargo.toml ./
-COPY src src
+COPY core core
+COPY minecraft minecraft
 
-RUN cargo build --release \
+RUN cargo build --release --bin adapter-minecraft \
  && strip target/release/adapter-minecraft
 
 

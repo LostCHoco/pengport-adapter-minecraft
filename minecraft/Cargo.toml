@@ -1,0 +1,24 @@
+[package]
+name = "pengport-adapter-minecraft"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-only"
+repository = "https://github.com/LostCHoco/pengport-adapter-minecraft"
+description = "PengPort PSP 어댑터 — Minecraft flavor (core 위 thin: rcon + log tail source)"
+
+[[bin]]
+name = "adapter-minecraft"
+path = "src/main.rs"
+
+[dependencies]
+pengport-adapter-core = { path = "../core" }
+pengport-shared = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+serde_json = { workspace = true }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+rcon = { version = "0.6", features = ["rt-tokio"] }
+regex = "1"
+# Filesystem watch — minecraft 의 latest.log 를 inotify (Linux) 로 직접 follow.
+notify = "6"

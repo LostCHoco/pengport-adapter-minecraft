@@ -1,6 +1,7 @@
-//! `AppConfig` → PSP `ServiceManifest` 빌더.
+//! `AppConfig` → PSP `ServiceManifest` 빌더 (minecraft flavor 의 manifest 내용).
 //!
 //! 어댑터 부팅 시 1회 생성 후 `/.well-known/pengport-service` 응답으로 사용.
+//! (Phase C 에서 actions/category 를 선언적 config 로 일반화 → core 로 이동 후보.)
 
 use pengport_shared::psp::manifest::{
     CategoryHint, EventType, ManifestEndpoints, NativeActionKind, Permissions, ServiceAction,
@@ -8,7 +9,7 @@ use pengport_shared::psp::manifest::{
 };
 use serde_json::json;
 
-use crate::config::AppConfig;
+use crate::mc_config::AppConfig;
 
 pub fn build_manifest(cfg: &AppConfig, base_url: &str) -> ServiceManifest {
     let mut prism_config = serde_json::Map::new();
@@ -51,7 +52,6 @@ pub fn build_manifest(cfg: &AppConfig, base_url: &str) -> ServiceManifest {
     }];
 
     // packwiz_url 이 있으면 external_urls 에 그 origin pattern 추가.
-    // 단순 문자열 처리: scheme://host[:port] 까지 자르고 `/*` 붙임.
     let mut external_urls = Vec::new();
     if let Some(url) = &cfg.packwiz_url {
         if let Some(origin) = origin_of(url) {

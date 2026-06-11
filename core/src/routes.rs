@@ -1,4 +1,4 @@
-//! PSP HTTP endpoints + SSE handler.
+//! PSP HTTP endpoints + SSE handler. generic — 서비스 종류 무관.
 //!
 //! - `GET /.well-known/pengport-service` → ServiceManifest (JSON)
 //! - `GET /pengport/status` → StatusResponse (JSON)

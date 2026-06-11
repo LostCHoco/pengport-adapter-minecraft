@@ -1,5 +1,5 @@
-//! RCON 을 통해 서버의 현재 접속자 목록을 주기적으로 조회해 internal state 와
-//! 동기화한다. Docker tail 이 놓친 이벤트를 보정.
+//! RCON 을 통해 서버의 현재 접속자 목록을 주기적으로 조회해 core state 와
+//! 동기화한다. Docker tail 이 놓친 이벤트를 보정. (minecraft source 의 pull 부분.)
 //!
 //! RCON `list` 응답:
 //!   "There are X of a max of Y players online: name1, name2, name3"
@@ -12,11 +12,10 @@ use std::sync::LazyLock;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
+use pengport_adapter_core::AppState;
 use rcon::Connection;
 use regex::Regex;
 use tokio::net::TcpStream;
-
-use crate::state::AppState;
 
 pub fn parse_list_response(response: &str) -> Option<(u32, u32, BTreeSet<String>)> {
     static RE: LazyLock<Regex> = LazyLock::new(|| {
@@ -64,7 +63,7 @@ pub async fn rcon_sync_loop(
         ticker.tick().await;
         match rcon_list(&address, &password).await {
             Ok((_count, max, players)) => {
-                state.sync_from_authoritative(players, Some(max)).await;
+                state.present_sync(players, Some(max)).await;
                 last_success = tokio::time::Instant::now();
             }
             Err(e) => {

@@ -1,12 +1,12 @@
-//! 환경변수 기반 어댑터 설정.
+//! 환경변수 기반 minecraft flavor 설정.
 //!
 //! 단일 MC 인스턴스 = 단일 어댑터 컨테이너. multi-instance 면 여러 어댑터 띄움.
+//! (시크릿 마스킹 타입 `SecretString` 은 core 에서.)
 //!
 //! ## 필수
 //! - `MC_ID`              — service id (catalog 와 일치). 예: `modded-mc`
 //! - `MC_NAME`            — manifest 의 사용자 표시 이름. 예: `알파펭`
 //! - `MC_LOG_DIR`         — minecraft logs 디렉토리 (host bind mount → adapter ro).
-//!   예: `/mc-logs` (latest.log 가 이 경로 안에 있어야 함)
 //! - `RCON_ADDRESS`       — `host:port` (컨테이너 네트워크 내)
 //! - `RCON_PASSWORD`      — RCON 비밀번호
 //! - `MC_HOST`            — 클라이언트가 접속할 도메인/IP (public)
@@ -28,31 +28,7 @@ use std::env;
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-
-/// Secret string with masking on Debug/Display.
-#[derive(Clone)]
-pub struct SecretString(String);
-
-impl SecretString {
-    pub fn new(s: String) -> Self {
-        Self(s)
-    }
-    pub fn expose(&self) -> &str {
-        &self.0
-    }
-}
-
-impl std::fmt::Debug for SecretString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("\"***\"")
-    }
-}
-
-impl std::fmt::Display for SecretString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("***")
-    }
-}
+use pengport_adapter_core::SecretString;
 
 #[derive(Debug, Clone)]
 pub struct AppConfig {
@@ -133,17 +109,5 @@ impl AppConfig {
             mc_java_major,
             packwiz_url,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn secret_debug_masks() {
-        let s = SecretString::new("super-secret".into());
-        assert_eq!(format!("{:?}", s), "\"***\"");
-        assert_eq!(s.expose(), "super-secret");
     }
 }
