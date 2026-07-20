@@ -20,8 +20,8 @@ pub fn build_manifest(cfg: &AppConfig, base_url: &str) -> ServiceManifest {
     if let Some(v) = &cfg.mc_loader_version {
         prism_config.insert("loader_version".into(), json!(v));
     }
-    if let Some(v) = &cfg.packwiz_url {
-        prism_config.insert("packwiz_url".into(), json!(v));
+    if let Some(v) = &cfg.pack_bundle_url {
+        prism_config.insert("pack_bundle_url".into(), json!(v));
     }
     if let Some(v) = cfg.mc_java_major {
         prism_config.insert("java_major".into(), json!(v));
@@ -51,9 +51,9 @@ pub fn build_manifest(cfg: &AppConfig, base_url: &str) -> ServiceManifest {
         args: serde_json::Value::Object(play_args),
     }];
 
-    // packwiz_url 이 있으면 external_urls 에 그 origin pattern 추가.
+    // pack_bundle_url 이 있으면 external_urls 에 그 origin pattern 추가.
     let mut external_urls = Vec::new();
-    if let Some(url) = &cfg.packwiz_url {
+    if let Some(url) = &cfg.pack_bundle_url {
         if let Some(origin) = origin_of(url) {
             external_urls.push(format!("{}/*", origin));
         }

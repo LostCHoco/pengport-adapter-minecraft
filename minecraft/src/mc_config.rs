@@ -17,7 +17,8 @@
 //! ## 선택
 //! - `BIND`               — HTTP 리슨 (default `0.0.0.0:8080`)
 //! - `MC_LOADER_VERSION`  — vanilla 외에는 필수
-//! - `PACKWIZ_URL`        — packwiz pack.toml URL (모드팩 자동 동기화)
+//! - `PACK_BUNDLE_URL`    — 인증 팩 번들(zip) URL. 런처가 EVENTS_TOKEN 으로 GET → 추출
+//!                          → 로컬 packwiz-installer. overrides 공개 재배포 방지.
 //! - `MC_DISPLAY_NAME`    — Prism 인스턴스 이름 (default = MC_NAME)
 //! - `MC_JAVA_MAJOR`      — Java major (예: 21). 없으면 client 가 Prism default 사용
 //! - `MC_DESCRIPTION`     — manifest description
@@ -54,7 +55,7 @@ pub struct AppConfig {
     pub mc_loader_version: Option<String>,
     pub mc_display_name: Option<String>,
     pub mc_java_major: Option<u32>,
-    pub packwiz_url: Option<String>,
+    pub pack_bundle_url: Option<String>,
 }
 
 impl AppConfig {
@@ -88,7 +89,7 @@ impl AppConfig {
             .ok()
             .map(|s| s.parse::<u32>().context("MC_JAVA_MAJOR 파싱 실패"))
             .transpose()?;
-        let packwiz_url = env::var("PACKWIZ_URL").ok();
+        let pack_bundle_url = env::var("PACK_BUNDLE_URL").ok();
 
         Ok(Self {
             bind,
@@ -107,7 +108,7 @@ impl AppConfig {
             mc_loader_version,
             mc_display_name,
             mc_java_major,
-            packwiz_url,
+            pack_bundle_url,
         })
     }
 }
