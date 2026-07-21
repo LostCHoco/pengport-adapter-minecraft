@@ -1,5 +1,10 @@
 # pengport-adapter-minecraft
 
+> **⚠️ Archived (2026-07-22).** PengPort 0.2.0부터 라이브러리 항목의 최소 상태(설치됨/실행중)는
+> 로컬 프로세스 기준으로만 판단하고, 원격 상태 서버를 폴링/구독하지 않습니다. 이 어댑터가
+> 제공하던 RCON 상태 동기화·로그 tail·SSE presence는 새 모델에서 쓰이지 않습니다. 후속 모델은
+> [PengPort](https://github.com/LostCHoco/PengPort) 본가를 참고하세요. 더 이상 유지보수되지 않습니다.
+
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 [PengPort](https://github.com/LostCHoco/PengPort) PSP (PengPort Service Protocol) 의 **Minecraft 카테고리 어댑터**. Docker Engine API 로 Minecraft 컨테이너의 로그를 tail 하고 RCON 으로 접속자 목록을 동기화하여, PSP 표준 endpoints (`manifest` / `status` / `events`) 응답을 노출합니다.
